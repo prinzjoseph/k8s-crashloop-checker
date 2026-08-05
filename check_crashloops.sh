@@ -5,11 +5,9 @@ check_crashloops() {
       count=0
       echo "Checking namespace: $ns"
       while read -r line; do
-        if echo "$line" | grep -q "CrashLoopBackOff"; then
-          echo "  ⚠️  ALERT: $line"
+          echo "  ⚠️  ALERT: CrashLoopBackOff in pod: $line"
           count=$((count + 1))
-        fi
-      done < <(kubectl get pods -n "$ns" --no-headers)
+      done < <(kubectl get pods -n $ns -o json | jq -r '.items[] | select(.status.containerStatuses[]?.state.waiting.reason == "CrashLoopBackOff" or .status.containerStatuses[]?.restartCount > 100) | .metadata.name')
       echo "Alerts in $ns: $count"
     }
 
